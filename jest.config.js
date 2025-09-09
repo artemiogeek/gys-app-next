@@ -3,7 +3,7 @@ const path = require('path')
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/config/jest.setup.js'],
   moduleNameMapper: {
     // Handle module aliases (this will be automatically configured for you based on your tsconfig.json paths)
     '^@/(.*)$': '<rootDir>/src/$1',
@@ -109,7 +109,7 @@ const customJestConfig = {
         '<rootDir>/src/**/__tests__/services/**/*.test.{js,jsx,ts,tsx}'
       ],
       testEnvironment: 'node',
-      setupFilesAfterEnv: ['<rootDir>/jest.setup.services.js'],
+      setupFilesAfterEnv: ['<rootDir>/config/jest.setup.services.js'],
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
         '^@/components/(.*)$': '<rootDir>/src/components/$1',
@@ -143,7 +143,7 @@ const customJestConfig = {
         '<rootDir>/src/**/__tests__/app/**/*.test.{js,jsx,ts,tsx}'
       ],
       testEnvironment: 'jsdom',
-      setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+      setupFilesAfterEnv: ['<rootDir>/config/jest.setup.js'],
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
         '^@/components/(.*)$': '<rootDir>/src/components/$1',
@@ -179,7 +179,7 @@ const customJestConfig = {
         '<rootDir>/src/**/__tests__/api/**/*.test.{js,jsx,ts,tsx}'
       ],
       testEnvironment: 'node',
-      setupFilesAfterEnv: ['<rootDir>/jest.setup.services.js']
+      setupFilesAfterEnv: ['<rootDir>/config/jest.setup.services.js']
     },
     {
       displayName: 'Integration Tests',
@@ -187,7 +187,7 @@ const customJestConfig = {
         '<rootDir>/src/**/__tests__/**/*.integration.test.{js,jsx,ts,tsx}'
       ],
       testEnvironment: 'node',
-      setupFilesAfterEnv: ['<rootDir>/jest.setup.services.js'],
+      setupFilesAfterEnv: ['<rootDir>/config/jest.setup.services.js'],
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
         '^@/components/(.*)$': '<rootDir>/src/components/$1',
@@ -220,8 +220,8 @@ const customJestConfig = {
         '<rootDir>/src/**/__tests__/**/*.accessibility.test.{js,jsx,ts,tsx}'
       ],
       setupFilesAfterEnv: [
-        '<rootDir>/jest.setup.js',
-        '<rootDir>/jest.accessibility.setup.js'
+        '<rootDir>/config/jest.setup.js',
+        '<rootDir>/config/jest.accessibility.setup.js'
       ]
     }
   ],
