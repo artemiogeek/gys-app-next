@@ -1,0 +1,897 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                            String                        @id @default(cuid())
+  name                          String?
+  email                         String                        @unique
+  emailVerified                 DateTime?
+  password                      String
+  role                          Role                          @default(colaborador)
+  image                         String?
+  accounts                      Account[]
+  cotizaciones                  Cotizacion[]
+  listaEquipos                  ListaEquipo[]
+  listaEquipoItems              ListaEquipoItem[]
+  pedidoEquipos                 PedidoEquipo[]
+  pedidoEquipoItems             PedidoEquipoItem[]
+  proyectosComercial            Proyecto[]                    @relation("ComercialProyecto")
+  proyectosGestor               Proyecto[]                    @relation("GestorProyecto")
+  ProyectoEquipos               ProyectoEquipo[]
+  ProyectoServicios             ProyectoServicio[]
+  registrosHoras                RegistroHoras[]
+  sessions                      Session[]
+  // Relaciones Logística y Finanzas eliminadas
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Cliente {
+  id           String       @id @default(cuid())
+  nombre       String
+  ruc          String?
+  direccion    String?
+  telefono     String?
+  correo       String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  cotizaciones Cotizacion[]
+  proyectos    Proyecto[]
+}
+
+model Unidad {
+  id        String           @id @default(cuid())
+  nombre    String           @unique
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  equipos   CatalogoEquipo[]
+}
+
+model UnidadServicio {
+  id                      String                   @id @default(cuid())
+  nombre                  String                   @unique
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  servicios               CatalogoServicio[]
+  cotizacionServicioItems CotizacionServicioItem[]
+  plantillaServicioItems  PlantillaServicioItem[]
+}
+
+model CategoriaEquipo {
+  id        String           @id @default(cuid())
+  nombre    String           @unique
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  equipos   CatalogoEquipo[]
+}
+
+model CategoriaServicio {
+  id        String             @id @default(cuid())
+  nombre    String             @unique
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  servicios CatalogoServicio[]
+}
+
+model Recurso {
+  id                      String                   @id @default(cuid())
+  nombre                  String                   @unique
+  costoHora               Float
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  servicios               CatalogoServicio[]
+  cotizacionServicioItems CotizacionServicioItem[]
+  plantillaServicioItems  PlantillaServicioItem[]
+  registrosHoras          RegistroHoras[]
+}
+
+model CatalogoEquipo {
+  id                    String                 @id @default(cuid())
+  categoriaId           String
+  unidadId              String
+  codigo                String                 @unique
+  descripcion           String
+  marca                 String
+  precioInterno         Float
+  margen                Float
+  precioVenta           Float
+  estado                String
+  precioReal            Float?
+  fechaActualizacion    DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  categoria             CategoriaEquipo        @relation(fields: [categoriaId], references: [id])
+  unidad                Unidad                 @relation(fields: [unidadId], references: [id])
+  cotizacionEquipoItems CotizacionEquipoItem[]
+  plantillaEquipoItems  PlantillaEquipoItem[]
+  proyectoEquipoItems   ProyectoEquipoItem[]
+}
+
+model CatalogoServicio {
+  id                      String                   @id @default(cuid())
+  categoriaId             String
+  unidadServicioId        String
+  recursoId               String
+  nombre                  String
+  descripcion             String
+  formula                 String
+  horaBase                Float?
+  horaRepetido            Float?
+  horaUnidad              Float?
+  horaFijo                Float?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  categoria               CategoriaServicio        @relation(fields: [categoriaId], references: [id])
+  recurso                 Recurso                  @relation(fields: [recursoId], references: [id])
+  unidadServicio          UnidadServicio           @relation(fields: [unidadServicioId], references: [id])
+  cotizacionServicioItems CotizacionServicioItem[]
+  plantillaItems          PlantillaServicioItem[]
+  proyectoServicioItems   ProyectoServicioItem[]
+}
+
+model Plantilla {
+  id                    String              @id @default(cuid())
+  nombre                String
+  estado                String              @default("borrador")
+  totalEquiposInterno   Float               @default(0)
+  totalEquiposCliente   Float               @default(0)
+  totalServiciosInterno Float               @default(0)
+  totalServiciosCliente Float               @default(0)
+  totalGastosInterno    Float               @default(0)
+  totalGastosCliente    Float               @default(0)
+  totalInterno          Float               @default(0)
+  totalCliente          Float               @default(0)
+  descuento             Float               @default(0)
+  grandTotal            Float               @default(0)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  cotizaciones          Cotizacion[]
+  equipos               PlantillaEquipo[]
+  gastos                PlantillaGasto[]
+  servicios             PlantillaServicio[]
+}
+
+model PlantillaEquipo {
+  id              String                @id @default(cuid())
+  plantillaId     String
+  nombre          String
+  descripcion     String?
+  subtotalInterno Float
+  subtotalCliente Float
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  plantilla       Plantilla             @relation(fields: [plantillaId], references: [id], onDelete: Cascade)
+  items           PlantillaEquipoItem[]
+}
+
+model PlantillaEquipoItem {
+  id                String          @id @default(cuid())
+  plantillaEquipoId String
+  catalogoEquipoId  String?
+  codigo            String
+  descripcion       String
+  categoria         String
+  unidad            String
+  marca             String
+  precioInterno     Float
+  precioCliente     Float
+  cantidad          Float
+  costoInterno      Float
+  costoCliente      Float
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  catalogoEquipo    CatalogoEquipo? @relation(fields: [catalogoEquipoId], references: [id])
+  plantillaEquipo   PlantillaEquipo @relation(fields: [plantillaEquipoId], references: [id], onDelete: Cascade)
+}
+
+model PlantillaServicio {
+  id              String                  @id @default(cuid())
+  plantillaId     String
+  nombre          String
+  descripcion     String?
+  subtotalInterno Float
+  subtotalCliente Float
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  plantilla       Plantilla               @relation(fields: [plantillaId], references: [id], onDelete: Cascade)
+  items           PlantillaServicioItem[]
+}
+
+model PlantillaServicioItem {
+  id                   String            @id @default(cuid())
+  plantillaServicioId  String
+  catalogoServicioId   String?
+  unidadServicioId     String
+  recursoId            String
+  nombre               String
+  descripcion          String
+  categoria            String
+  unidadServicioNombre String
+  recursoNombre        String
+  formula              String
+  horaBase             Float?
+  horaRepetido         Float?
+  horaUnidad           Float?
+  horaFijo             Float?
+  costoHora            Float
+  cantidad             Int
+  horaTotal            Float
+  factorSeguridad      Float
+  margen               Float
+  costoInterno         Float
+  costoCliente         Float
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  catalogoServicio     CatalogoServicio? @relation(fields: [catalogoServicioId], references: [id])
+  plantillaServicio    PlantillaServicio @relation(fields: [plantillaServicioId], references: [id], onDelete: Cascade)
+  recurso              Recurso           @relation(fields: [recursoId], references: [id])
+  unidadServicio       UnidadServicio    @relation(fields: [unidadServicioId], references: [id])
+}
+
+model PlantillaGasto {
+  id              String               @id @default(cuid())
+  plantillaId     String
+  nombre          String
+  descripcion     String?
+  subtotalInterno Float
+  subtotalCliente Float
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  plantilla       Plantilla            @relation(fields: [plantillaId], references: [id], onDelete: Cascade)
+  items           PlantillaGastoItem[]
+}
+
+model PlantillaGastoItem {
+  id              String         @id @default(cuid())
+  gastoId         String
+  nombre          String
+  descripcion     String?
+  cantidad        Float
+  precioUnitario  Float
+  factorSeguridad Float          @default(1.0)
+  margen          Float          @default(1.0)
+  costoInterno    Float
+  costoCliente    Float
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  gasto           PlantillaGasto @relation(fields: [gastoId], references: [id], onDelete: Cascade)
+}
+
+model Cotizacion {
+  id                    String               @id @default(cuid())
+  clienteId             String?
+  comercialId           String?
+  plantillaId           String?
+  nombre                String
+  totalEquiposInterno   Float                @default(0)
+  totalEquiposCliente   Float                @default(0)
+  totalServiciosInterno Float                @default(0)
+  totalServiciosCliente Float                @default(0)
+  totalGastosInterno    Float                @default(0)
+  totalGastosCliente    Float                @default(0)
+  totalInterno          Float                @default(0)
+  totalCliente          Float                @default(0)
+  descuento             Float                @default(0)
+  grandTotal            Float                @default(0)
+  etapa                 String               @default("nuevo")
+  prioridad             String?
+  probabilidad          Int?
+  fechaEnvio            DateTime?
+  fechaCierreEstimada   DateTime?
+  notas                 String?
+  estado                String               @default("borrador")
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  cliente               Cliente?             @relation(fields: [clienteId], references: [id])
+  comercial             User?                @relation(fields: [comercialId], references: [id])
+  plantilla             Plantilla?           @relation(fields: [plantillaId], references: [id])
+  equipos               CotizacionEquipo[]
+  gastos                CotizacionGasto[]
+  servicios             CotizacionServicio[]
+  proyectos             Proyecto[]
+}
+
+model CotizacionEquipo {
+  id              String                 @id @default(cuid())
+  cotizacionId    String
+  nombre          String
+  descripcion     String?
+  subtotalInterno Float
+  subtotalCliente Float
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  cotizacion      Cotizacion             @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  items           CotizacionEquipoItem[]
+}
+
+model CotizacionEquipoItem {
+  id                 String           @id @default(cuid())
+  cotizacionEquipoId String
+  catalogoEquipoId   String?
+  codigo             String
+  descripcion        String
+  categoria          String
+  unidad             String
+  marca              String
+  precioInterno      Float
+  precioCliente      Float
+  cantidad           Float
+  costoInterno       Float
+  costoCliente       Float
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  catalogoEquipo     CatalogoEquipo?  @relation(fields: [catalogoEquipoId], references: [id])
+  cotizacionEquipo   CotizacionEquipo @relation(fields: [cotizacionEquipoId], references: [id], onDelete: Cascade)
+}
+
+model CotizacionServicio {
+  id              String                   @id @default(cuid())
+  cotizacionId    String
+  categoria       String
+  subtotalInterno Float
+  subtotalCliente Float
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  cotizacion      Cotizacion               @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  items           CotizacionServicioItem[]
+}
+
+model CotizacionServicioItem {
+  id                   String             @id @default(cuid())
+  cotizacionServicioId String
+  catalogoServicioId   String?
+  unidadServicioId     String
+  recursoId            String
+  nombre               String
+  descripcion          String
+  categoria            String
+  unidadServicioNombre String
+  recursoNombre        String
+  formula              String
+  horaBase             Float?
+  horaRepetido         Float?
+  horaUnidad           Float?
+  horaFijo             Float?
+  costoHora            Float
+  cantidad             Int
+  horaTotal            Float
+  factorSeguridad      Float
+  margen               Float
+  costoInterno         Float
+  costoCliente         Float
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  catalogoServicio     CatalogoServicio?  @relation(fields: [catalogoServicioId], references: [id])
+  cotizacionServicio   CotizacionServicio @relation(fields: [cotizacionServicioId], references: [id], onDelete: Cascade)
+  recurso              Recurso            @relation(fields: [recursoId], references: [id])
+  unidadServicio       UnidadServicio     @relation(fields: [unidadServicioId], references: [id])
+}
+
+model CotizacionGasto {
+  id              String                @id @default(cuid())
+  cotizacionId    String
+  nombre          String
+  descripcion     String?
+  subtotalInterno Float
+  subtotalCliente Float
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  cotizacion      Cotizacion            @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  items           CotizacionGastoItem[]
+}
+
+model CotizacionGastoItem {
+  id              String          @id @default(cuid())
+  gastoId         String
+  nombre          String
+  descripcion     String?
+  cantidad        Float
+  precioUnitario  Float
+  factorSeguridad Float           @default(1.0)
+  margen          Float           @default(1.0)
+  costoInterno    Float
+  costoCliente    Float
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  gasto           CotizacionGasto @relation(fields: [gastoId], references: [id], onDelete: Cascade)
+}
+
+model Proyecto {
+  id                    String                @id @default(cuid())
+  clienteId             String
+  comercialId           String
+  gestorId              String
+  cotizacionId          String?
+  nombre                String
+  totalEquiposInterno   Float                 @default(0)
+  totalServiciosInterno Float                 @default(0)
+  totalGastosInterno    Float                 @default(0)
+  totalInterno          Float                 @default(0)
+  totalCliente          Float                 @default(0)
+  descuento             Float                 @default(0)
+  grandTotal            Float                 @default(0)
+  codigo                String
+  estado                String                @default("activo")
+  fechaInicio           DateTime
+  fechaFin              DateTime?
+  totalRealEquipos      Float                 @default(0)
+  totalRealServicios    Float                 @default(0)
+  totalRealGastos       Float                 @default(0)
+  totalReal             Float                 @default(0)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  cotizacionesProveedor CotizacionProveedor[]
+  listaEquipos          ListaEquipo[]
+  pedidos               PedidoEquipo[]
+  cliente               Cliente               @relation(fields: [clienteId], references: [id])
+  comercial             User                  @relation("ComercialProyecto", fields: [comercialId], references: [id])
+  cotizacion            Cotizacion?           @relation(fields: [cotizacionId], references: [id])
+  gestor                User                  @relation("GestorProyecto", fields: [gestorId], references: [id])
+  equipos               ProyectoEquipo[]
+  gastos                ProyectoGasto[]
+  servicios             ProyectoServicio[]
+  registrosHoras        RegistroHoras[]
+  valorizaciones        Valorizacion[]
+}
+
+model ProyectoEquipo {
+  id              String               @id @default(cuid())
+  proyectoId      String
+  responsableId   String
+  nombre          String
+  descripcion     String?
+  subtotalInterno Float
+  subtotalCliente Float
+  subtotalReal    Float                @default(0)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  listaItems      ListaEquipoItem[]
+  proyecto        Proyecto             @relation(fields: [proyectoId], references: [id])
+  responsable     User                 @relation(fields: [responsableId], references: [id])
+  items           ProyectoEquipoItem[]
+}
+
+model ProyectoEquipoItem {
+  id                        String            @id @default(cuid())
+  proyectoEquipoId          String
+  catalogoEquipoId          String?
+  listaId                   String?
+  codigo                    String
+  descripcion               String
+  categoria                 String            @default("SIN-CATEGORIA")
+  unidad                    String
+  marca                     String            @default("SIN-MARCA")
+  precioInterno             Float
+  precioCliente             Float
+  cantidad                  Float
+  costoInterno              Float
+  costoCliente              Float
+  precioReal                Float             @default(0)
+  cantidadReal              Float             @default(0)
+  costoReal                 Float             @default(0)
+  tiempoEntrega             Int?
+  fechaEntregaEstimada      DateTime?
+  estado                    EstadoEquipoItem  @default(pendiente)
+  motivoCambio              String?
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+  listaEquipoSeleccionadoId String?
+  listaEquipos              ListaEquipoItem[]
+  reemplazadoPor            ListaEquipoItem[] @relation("ReemplazoCotizado")
+  catalogoEquipo            CatalogoEquipo?   @relation(fields: [catalogoEquipoId], references: [id])
+  listaEquipoSeleccionado   ListaEquipoItem?  @relation("ListaSeleccionada", fields: [listaEquipoSeleccionadoId], references: [id])
+  lista                     ListaEquipo?      @relation(fields: [listaId], references: [id])
+  proyectoEquipo            ProyectoEquipo    @relation(fields: [proyectoEquipoId], references: [id], onDelete: Cascade)
+}
+
+model ProyectoServicio {
+  id              String                 @id @default(cuid())
+  proyectoId      String
+  responsableId   String
+  categoria       String
+  subtotalInterno Float
+  subtotalCliente Float
+  subtotalReal    Float                  @default(0)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  proyecto        Proyecto               @relation(fields: [proyectoId], references: [id])
+  responsable     User                   @relation(fields: [responsableId], references: [id])
+  items           ProyectoServicioItem[]
+  registrosHoras  RegistroHoras[]
+}
+
+model ProyectoServicioItem {
+  id                 String            @id @default(cuid())
+  proyectoServicioId String
+  catalogoServicioId String?
+  categoria          String
+  costoHoraInterno   Float
+  costoHoraCliente   Float
+  nombre             String
+  cantidadHoras      Int
+  costoInterno       Float
+  costoCliente       Float
+  costoReal          Float             @default(0)
+  horasEjecutadas    Float             @default(0)
+  motivoCambio       String?
+  nuevo              Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  catalogoServicio   CatalogoServicio? @relation(fields: [catalogoServicioId], references: [id])
+  proyectoServicio   ProyectoServicio  @relation(fields: [proyectoServicioId], references: [id])
+}
+
+model ProyectoGasto {
+  id              String              @id @default(cuid())
+  proyectoId      String
+  nombre          String
+  descripcion     String?
+  subtotalInterno Float
+  subtotalCliente Float
+  subtotalReal    Float               @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  proyecto        Proyecto            @relation(fields: [proyectoId], references: [id])
+  items           ProyectoGastoItem[]
+}
+
+model ProyectoGastoItem {
+  id              String        @id @default(cuid())
+  gastoId         String
+  nombre          String
+  descripcion     String?
+  cantidad        Float
+  precioUnitario  Float
+  factorSeguridad Float
+  margen          Float
+  costoInterno    Float
+  costoCliente    Float
+  costoReal       Float         @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  gasto           ProyectoGasto @relation(fields: [gastoId], references: [id])
+}
+
+model ListaEquipo {
+  id                      String                    @id @default(cuid())
+  proyectoId              String
+  codigo                  String                    @unique
+  nombre                  String
+  numeroSecuencia         Int
+  estado                  EstadoListaEquipo         @default(borrador)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  responsableId           String
+  fechaAprobacionFinal    DateTime?
+  fechaAprobacionRevision DateTime?
+  fechaEnvioLogistica     DateTime?
+  fechaEnvioRevision      DateTime?
+  fechaFinCotizacion      DateTime?
+  fechaInicioCotizacion   DateTime?
+  fechaNecesaria          DateTime?
+  fechaValidacion         DateTime?
+  cotizaciones            CotizacionProveedorItem[]
+  proyecto                Proyecto                  @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+  responsable             User                      @relation(fields: [responsableId], references: [id])
+  items                   ListaEquipoItem[]
+  pedidoEquipos           PedidoEquipo[]
+  pedidoEquipoItems       PedidoEquipoItem[]
+  proyectoEquipoItems     ProyectoEquipoItem[]
+}
+
+model ListaEquipoItem {
+  id                            String                    @id @default(cuid())
+  listaId                       String
+  proyectoEquipoId              String?
+  proyectoEquipoItemId          String?
+  proveedorId                   String?
+  cotizacionSeleccionadaId      String?                   @unique
+  codigo                        String
+  descripcion                   String
+  unidad                        String
+  cantidad                      Float
+  verificado                    Boolean                   @default(false)
+  comentarioRevision            String?
+  presupuesto                   Float?
+  precioElegido                 Float?
+  costoElegido                  Float?
+  costoPedido                   Float?                    @default(0)
+  costoReal                     Float?                    @default(0)
+  cantidadPedida                Float?                    @default(0)
+  cantidadEntregada             Float?                    @default(0)
+  estado                        EstadoListaItem           @default(borrador)
+  createdAt                     DateTime                  @default(now())
+  updatedAt                     DateTime                  @updatedAt
+  origen                        OrigenListaItem           @default(nuevo)
+  reemplazaProyectoEquipoItemId String?
+  tiempoEntrega                 String?
+  tiempoEntregaDias             Int?
+  responsableId                 String
+  cotizaciones                  CotizacionProveedorItem[]
+  cotizacionSeleccionada        CotizacionProveedorItem?  @relation("SeleccionCotizacion", fields: [cotizacionSeleccionadaId], references: [id])
+  lista                         ListaEquipo               @relation(fields: [listaId], references: [id], onDelete: Cascade)
+  proveedor                     Proveedor?                @relation(fields: [proveedorId], references: [id])
+  proyectoEquipo                ProyectoEquipo?           @relation(fields: [proyectoEquipoId], references: [id])
+  proyectoEquipoItem            ProyectoEquipoItem?       @relation(fields: [proyectoEquipoItemId], references: [id])
+  reemplazaProyectoEquipoItem   ProyectoEquipoItem?       @relation("ReemplazoCotizado", fields: [reemplazaProyectoEquipoItemId], references: [id])
+  responsable                   User                      @relation(fields: [responsableId], references: [id])
+  pedidos                       PedidoEquipoItem[]
+  listaSeleccionadaDe           ProyectoEquipoItem[]      @relation("ListaSeleccionada")
+}
+
+model Proveedor {
+  id            String                @id @default(cuid())
+  nombre        String
+  ruc           String?
+  direccion     String?
+  telefono      String?
+  correo        String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  cotizaciones  CotizacionProveedor[]
+  listas        ListaEquipoItem[]
+}
+
+model CotizacionProveedor {
+  id              String                    @id @default(cuid())
+  proveedorId     String
+  proyectoId      String
+  codigo          String                    @unique
+  numeroSecuencia Int
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  estado          EstadoCotizacionProveedor @default(pendiente)
+  proveedor       Proveedor                 @relation(fields: [proveedorId], references: [id])
+  proyecto        Proyecto                  @relation(fields: [proyectoId], references: [id])
+  items           CotizacionProveedorItem[]
+}
+
+model CotizacionProveedorItem {
+  id                String                    @id @default(cuid())
+  cotizacionId      String
+  listaEquipoItemId String?
+  codigo            String
+  descripcion       String
+  unidad            String
+  cantidadOriginal  Float
+  precioUnitario    Float?
+  cantidad          Float?
+  costoTotal        Float?
+  tiempoEntrega     String?
+  tiempoEntregaDias Int?
+  estado            EstadoCotizacionProveedor @default(pendiente)
+  esSeleccionada    Boolean?                  @default(false)
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  listaId           String?
+  cotizacion        CotizacionProveedor       @relation(fields: [cotizacionId], references: [id])
+  listaEquipoItem   ListaEquipoItem?          @relation(fields: [listaEquipoItemId], references: [id])
+  lista             ListaEquipo?              @relation(fields: [listaId], references: [id])
+  seleccionadaEn    ListaEquipoItem?          @relation("SeleccionCotizacion")
+}
+
+model PedidoEquipo {
+  id                   String             @id @default(cuid())
+  proyectoId           String
+  responsableId        String
+  listaId              String?
+  codigo               String             @unique
+  numeroSecuencia      Int
+  estado               EstadoPedido       @default(borrador)
+  fechaPedido          DateTime           @default(now())
+  observacion          String?
+  fechaEntregaEstimada DateTime?
+  fechaEntregaReal     DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  fechaNecesaria       DateTime
+  costoRealTotal       Float              @default(0)
+  esUrgente            Boolean            @default(false)
+  presupuestoTotal     Float              @default(0)
+  prioridad            String?            @default("media")
+  lista                ListaEquipo?       @relation(fields: [listaId], references: [id])
+  proyecto             Proyecto           @relation(fields: [proyectoId], references: [id])
+  responsable          User               @relation(fields: [responsableId], references: [id])
+  items                PedidoEquipoItem[]
+}
+
+model PedidoEquipoItem {
+  id                          String            @id @default(cuid())
+  pedidoId                    String
+  listaEquipoItemId           String?
+  cantidadPedida              Float
+  precioUnitario              Float?
+  costoTotal                  Float?
+  estado                      EstadoPedidoItem  @default(pendiente)
+  cantidadAtendida            Float?
+  comentarioLogistica         String?
+  createdAt                   DateTime          @default(now())
+  updatedAt                   DateTime          @updatedAt
+  listaId                     String?
+  codigo                      String
+  descripcion                 String
+  tiempoEntrega               String?
+  tiempoEntregaDias           Int?
+  unidad                      String
+  fechaOrdenCompraRecomendada DateTime?
+  responsableId               String
+  listaEquipoItem             ListaEquipoItem?  @relation(fields: [listaEquipoItemId], references: [id])
+  lista                       ListaEquipo?      @relation(fields: [listaId], references: [id])
+  pedido                      PedidoEquipo      @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  responsable                 User              @relation(fields: [responsableId], references: [id])
+}
+
+model Valorizacion {
+  id            String   @id @default(cuid())
+  proyectoId    String
+  nombre        String
+  descripcion   String?
+  periodoInicio DateTime
+  periodoFin    DateTime
+  estado        String   @default("pendiente")
+  montoTotal    Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  proyecto      Proyecto @relation(fields: [proyectoId], references: [id])
+}
+
+model RegistroHoras {
+  id                 String           @id @default(cuid())
+  proyectoId         String
+  proyectoServicioId String
+  categoria          String
+  nombreServicio     String
+  recursoId          String
+  recursoNombre      String
+  usuarioId          String
+  fechaTrabajo       DateTime
+  horasTrabajadas    Float
+  descripcion        String?
+  observaciones      String?
+  aprobado           Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  proyecto           Proyecto         @relation(fields: [proyectoId], references: [id])
+  proyectoServicio   ProyectoServicio @relation(fields: [proyectoServicioId], references: [id])
+  recurso            Recurso          @relation(fields: [recursoId], references: [id])
+  usuario            User             @relation(fields: [usuarioId], references: [id])
+}
+
+// Modelo OrdenCompra eliminado
+
+// Modelo OrdenCompraItem eliminado
+
+// Modelo Recepcion eliminado
+
+// Modelo RecepcionItem eliminado
+
+// Modelo Pago eliminado
+
+// Modelo PagoItem eliminado
+
+
+
+/// *
+///  * Modelo Producto para el catálogo de productos/materiales
+///  * Usado en OrdenCompraItem para referenciar productos específicos
+// ❌ Eliminado: model Producto - no forma parte del sistema GYS
+
+enum EstadoEquipo {
+  pendiente
+  revisado_tecnico
+  aprobado_coordinador
+  aprobado_gestor
+  en_lista
+  comprado
+  reemplazado
+  entregado
+}
+
+enum EstadoEquipoItem {
+  pendiente
+  en_lista
+  reemplazado
+  descartado
+}
+
+enum EstadoListaItem {
+  borrador
+  por_revisar
+  por_cotizar
+  por_validar
+  por_aprobar
+  aprobado
+  rechazado
+}
+
+enum OrigenListaItem {
+  cotizado
+  nuevo
+  reemplazo
+}
+
+enum EstadoListaEquipo {
+  borrador
+  por_revisar
+  por_cotizar
+  por_validar
+  por_aprobar
+  aprobado
+  rechazado
+}
+
+enum EstadoPedido {
+  borrador
+  enviado
+  atendido
+  parcial
+  entregado
+  cancelado
+}
+
+enum EstadoPedidoItem {
+  pendiente
+  atendido
+  parcial
+  entregado
+}
+
+enum EstadoCotizacionProveedor {
+  pendiente
+  solicitado
+  cotizado
+  rechazado
+  seleccionado
+}
+
+enum Role {
+  colaborador
+  comercial
+  presupuestos
+  proyectos
+  coordinador
+  logistico
+  gestor
+  gerente
+  admin
+}
+
+// Enums de aprovisionamiento eliminados
